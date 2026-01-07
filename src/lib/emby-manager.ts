@@ -164,7 +164,7 @@ export function migrateEmbyConfig(config: AdminConfig): AdminConfig {
         key: 'default',
         name: 'Emby',
         enabled: oldConfig.Enabled ?? false,
-        ServerURL: oldConfig.ServerURL,
+        ServerURL: oldConfig.ServerURL || '',
         ApiKey: oldConfig.ApiKey,
         Username: oldConfig.Username,
         Password: oldConfig.Password,

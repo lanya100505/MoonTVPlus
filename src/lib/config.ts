@@ -503,7 +503,7 @@ export function configSelfCheck(adminConfig: AdminConfig): AdminConfig {
           key: 'default',
           name: 'Emby',
           enabled: oldConfig.Enabled ?? false,
-          ServerURL: oldConfig.ServerURL,
+          ServerURL: oldConfig.ServerURL || '',
           ApiKey: oldConfig.ApiKey,
           Username: oldConfig.Username,
           Password: oldConfig.Password,
@@ -518,7 +518,7 @@ export function configSelfCheck(adminConfig: AdminConfig): AdminConfig {
     }
 
     // Emby源去重
-    if (adminConfig.EmbyConfig.Sources) {
+    if (adminConfig.EmbyConfig?.Sources) {
       const seenEmbyKeys = new Set<string>();
       adminConfig.EmbyConfig.Sources = adminConfig.EmbyConfig.Sources.filter((source) => {
         if (seenEmbyKeys.has(source.key)) {

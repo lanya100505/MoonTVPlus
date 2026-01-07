@@ -9,7 +9,7 @@ import CapsuleSwitch from '@/components/CapsuleSwitch';
 import PageLayout from '@/components/PageLayout';
 import VideoCard from '@/components/VideoCard';
 
-type LibrarySourceType = 'openlist' | 'emby';
+type LibrarySourceType = 'openlist' | 'emby' | `emby:${string}` | `emby_${string}`;
 
 interface EmbySourceOption {
   key: string;
