@@ -288,6 +288,123 @@ export class D1Storage implements IStorage {
     }
   }
 
+  // ==================== 音乐播放记录相关 ====================
+
+  async getMusicPlayRecord(userName: string, key: string): Promise<any | null> {
+    try {
+      const result = await this.db
+        .prepare('SELECT * FROM music_play_records WHERE username = ? AND key = ?')
+        .bind(userName, key)
+        .first();
+
+      if (!result) return null;
+
+      return {
+        platform: result.platform,
+        id: result.song_id,
+        name: result.name,
+        artist: result.artist,
+        album: result.album || undefined,
+        pic: result.pic || undefined,
+        play_time: result.play_time,
+        duration: result.duration,
+        save_time: result.save_time,
+      };
+    } catch (err) {
+      console.error('D1Storage.getMusicPlayRecord error:', err);
+      return null;
+    }
+  }
+
+  async setMusicPlayRecord(userName: string, key: string, record: any): Promise<void> {
+    try {
+      await this.db
+        .prepare(`
+          INSERT INTO music_play_records (username, key, platform, song_id, name, artist, album, pic, play_time, duration, save_time)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ON CONFLICT(username, key) DO UPDATE SET
+            name = excluded.name,
+            artist = excluded.artist,
+            album = excluded.album,
+            pic = excluded.pic,
+            play_time = excluded.play_time,
+            duration = excluded.duration,
+            save_time = excluded.save_time
+        `)
+        .bind(
+          userName,
+          key,
+          record.platform,
+          record.id,
+          record.name,
+          record.artist,
+          record.album || null,
+          record.pic || null,
+          record.play_time,
+          record.duration,
+          record.save_time
+        )
+        .run();
+    } catch (err) {
+      console.error('D1Storage.setMusicPlayRecord error:', err);
+      throw err;
+    }
+  }
+
+  async getAllMusicPlayRecords(userName: string): Promise<{ [key: string]: any }> {
+    try {
+      const results = await this.db
+        .prepare('SELECT * FROM music_play_records WHERE username = ? ORDER BY save_time DESC')
+        .bind(userName)
+        .all();
+
+      const records: { [key: string]: any } = {};
+      if (results.results) {
+        for (const row of results.results) {
+          records[row.key as string] = {
+            platform: row.platform,
+            id: row.song_id,
+            name: row.name,
+            artist: row.artist,
+            album: row.album || undefined,
+            pic: row.pic || undefined,
+            play_time: row.play_time,
+            duration: row.duration,
+            save_time: row.save_time,
+          };
+        }
+      }
+      return records;
+    } catch (err) {
+      console.error('D1Storage.getAllMusicPlayRecords error:', err);
+      throw err;
+    }
+  }
+
+  async deleteMusicPlayRecord(userName: string, key: string): Promise<void> {
+    try {
+      await this.db
+        .prepare('DELETE FROM music_play_records WHERE username = ? AND key = ?')
+        .bind(userName, key)
+        .run();
+    } catch (err) {
+      console.error('D1Storage.deleteMusicPlayRecord error:', err);
+      throw err;
+    }
+  }
+
+  async clearAllMusicPlayRecords(userName: string): Promise<void> {
+    try {
+      await this.db
+        .prepare('DELETE FROM music_play_records WHERE username = ?')
+        .bind(userName)
+        .run();
+    } catch (err) {
+      console.error('D1Storage.clearAllMusicPlayRecords error:', err);
+      throw err;
+    }
+  }
+
   // ==================== 辅助方法 ====================
 
   private rowToPlayRecord(row: any): PlayRecord {

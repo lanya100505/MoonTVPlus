@@ -1,6 +1,7 @@
 /* eslint-disable no-console, @typescript-eslint/no-explicit-any, @typescript-eslint/no-non-null-assertion */
 
 import { AdminConfig } from './admin.types';
+import { MusicPlayRecord } from './db.client';
 import { KvrocksStorage } from './kvrocks.db';
 import { RedisStorage } from './redis.db';
 import { DanmakuFilterConfig,Favorite, IStorage, PlayRecord, SkipConfig } from './types';
@@ -199,7 +200,37 @@ export class DbManager {
     return favorite !== null;
   }
 
- 
+  // 音乐播放记录相关方法
+  async saveMusicPlayRecord(
+    userName: string,
+    platform: string,
+    id: string,
+    record: MusicPlayRecord
+  ): Promise<void> {
+    const key = generateStorageKey(platform, id);
+    await this.storage.setMusicPlayRecord(userName, key, record);
+  }
+
+  async getAllMusicPlayRecords(userName: string): Promise<{
+    [key: string]: MusicPlayRecord;
+  }> {
+    return this.storage.getAllMusicPlayRecords(userName);
+  }
+
+  async deleteMusicPlayRecord(
+    userName: string,
+    platform: string,
+    id: string
+  ): Promise<void> {
+    const key = generateStorageKey(platform, id);
+    await this.storage.deleteMusicPlayRecord(userName, key);
+  }
+
+  async clearAllMusicPlayRecords(userName: string): Promise<void> {
+    await this.storage.clearAllMusicPlayRecords(userName);
+  }
+
+
   async verifyUser(userName: string, password: string): Promise<boolean> {
     return this.storage.verifyUser(userName, password);
   }

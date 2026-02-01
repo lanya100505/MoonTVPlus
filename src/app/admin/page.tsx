@@ -353,6 +353,9 @@ interface SiteConfig {
   OIDCClientId?: string;
   OIDCClientSecret?: string;
   OIDCButtonText?: string;
+  TuneHubEnabled?: boolean;
+  TuneHubBaseUrl?: string;
+  TuneHubApiKey?: string;
 }
 
 // 视频源数据类型
@@ -6790,6 +6793,9 @@ const SiteConfigComponent = ({
     OIDCClientId: '',
     OIDCClientSecret: '',
     OIDCButtonText: '',
+    TuneHubEnabled: false,
+    TuneHubBaseUrl: 'https://tunehub.sayqz.com/api',
+    TuneHubApiKey: '',
   });
 
   // 豆瓣数据源相关状态
@@ -7662,6 +7668,93 @@ const SiteConfigComponent = ({
           </div>
           <p className='mt-1 text-xs text-gray-500 dark:text-gray-400'>
             开启后将显示豆瓣评论与相似推荐。评论为逆向抓取，请自行承担责任。
+          </p>
+        </div>
+      </div>
+
+      {/* TuneHub 音乐配置 */}
+      <div className='space-y-4 pt-4 border-t border-gray-200 dark:border-gray-700'>
+        <h3 className='text-sm font-semibold text-gray-900 dark:text-gray-100'>
+          TuneHub 音乐配置
+        </h3>
+
+        {/* 开启 TuneHub */}
+        <div>
+          <div className='flex items-center justify-between'>
+            <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'>
+              开启音乐功能
+            </label>
+            <button
+              type='button'
+              onClick={() =>
+                setSiteSettings((prev) => ({
+                  ...prev,
+                  TuneHubEnabled: !prev.TuneHubEnabled,
+                }))
+              }
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 ${
+                siteSettings.TuneHubEnabled
+                  ? buttonStyles.toggleOn
+                  : buttonStyles.toggleOff
+              }`}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full ${
+                  buttonStyles.toggleThumb
+                } transition-transform ${
+                  siteSettings.TuneHubEnabled
+                    ? buttonStyles.toggleThumbOn
+                    : buttonStyles.toggleThumbOff
+                }`}
+              />
+            </button>
+          </div>
+          <p className='mt-1 text-xs text-gray-500 dark:text-gray-400'>
+            开启后将在首页显示音乐视听入口，支持网易云、QQ音乐、酷我音乐
+          </p>
+        </div>
+
+        {/* TuneHub Base URL */}
+        <div>
+          <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'>
+            TuneHub API 地址
+          </label>
+          <input
+            type='text'
+            placeholder='https://tunehub.sayqz.com/api'
+            value={siteSettings.TuneHubBaseUrl}
+            onChange={(e) =>
+              setSiteSettings((prev) => ({
+                ...prev,
+                TuneHubBaseUrl: e.target.value,
+              }))
+            }
+            className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent'
+          />
+          <p className='mt-1 text-xs text-gray-500 dark:text-gray-400'>
+            TuneHub API 的基础地址，默认为 https://tunehub.sayqz.com/api。也可以通过环境变量 TUNEHUB_BASE_URL 配置
+          </p>
+        </div>
+
+        {/* TuneHub API Key */}
+        <div>
+          <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'>
+            TuneHub API Key
+          </label>
+          <input
+            type='password'
+            placeholder='th_your_api_key_here'
+            value={siteSettings.TuneHubApiKey}
+            onChange={(e) =>
+              setSiteSettings((prev) => ({
+                ...prev,
+                TuneHubApiKey: e.target.value,
+              }))
+            }
+            className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent'
+          />
+          <p className='mt-1 text-xs text-gray-500 dark:text-gray-400'>
+            用于解析歌曲播放链接的 API Key（消耗积分）。搜索、榜单、歌单等功能不需要 Key。也可以通过环境变量 TUNEHUB_API_KEY 配置
           </p>
         </div>
       </div>

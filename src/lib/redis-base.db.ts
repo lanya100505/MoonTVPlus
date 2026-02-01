@@ -515,6 +515,54 @@ export abstract class BaseRedisStorage implements IStorage {
     console.log(`用户 ${userName} 的收藏迁移完成`);
   }
 
+  // ---------- 音乐播放记录相关 ----------
+  private musicPlayRecordHashKey(userName: string) {
+    return `u:${userName}:music_play_records`;
+  }
+
+  async getMusicPlayRecord(userName: string, key: string): Promise<any | null> {
+    const value = await this.withRetry(() =>
+      this.adapter.hGet(this.musicPlayRecordHashKey(userName), key)
+    );
+    return value ? JSON.parse(value) : null;
+  }
+
+  async setMusicPlayRecord(userName: string, key: string, record: any): Promise<void> {
+    await this.withRetry(() =>
+      this.adapter.hSet(
+        this.musicPlayRecordHashKey(userName),
+        key,
+        JSON.stringify(record)
+      )
+    );
+  }
+
+  async getAllMusicPlayRecords(userName: string): Promise<Record<string, any>> {
+    const hashData = await this.withRetry(() =>
+      this.adapter.hGetAll(this.musicPlayRecordHashKey(userName))
+    );
+
+    const result: Record<string, any> = {};
+    for (const [key, value] of Object.entries(hashData)) {
+      if (value) {
+        result[key] = JSON.parse(value);
+      }
+    }
+    return result;
+  }
+
+  async deleteMusicPlayRecord(userName: string, key: string): Promise<void> {
+    await this.withRetry(() =>
+      this.adapter.hDel(this.musicPlayRecordHashKey(userName), key)
+    );
+  }
+
+  async clearAllMusicPlayRecords(userName: string): Promise<void> {
+    await this.withRetry(() =>
+      this.adapter.del(this.musicPlayRecordHashKey(userName))
+    );
+  }
+
   // ---------- 用户注册 / 登录（旧版本，保持兼容） ----------
   private userPwdKey(user: string) {
     return `u:${user}:pwd`;

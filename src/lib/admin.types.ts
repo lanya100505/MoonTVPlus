@@ -56,6 +56,10 @@ export interface AdminConfig {
     OIDCClientSecret?: string; // OIDC Client Secret
     OIDCButtonText?: string; // OIDC登录按钮文字
     OIDCMinTrustLevel?: number; // 最低信任等级（仅LinuxDo网站有效，为0时不判断）
+    // TuneHub音乐配置
+    TuneHubEnabled?: boolean; // 启用音乐功能
+    TuneHubBaseUrl?: string; // TuneHub API地址
+    TuneHubApiKey?: string; // TuneHub API Key
   };
   UserConfig: {
     Users: {
