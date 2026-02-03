@@ -1,17 +1,21 @@
 'use client';
 
 import { AlertTriangle,Radio } from 'lucide-react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 
 import { useWebLiveSync } from '@/hooks/useWebLiveSync';
 
 import PageLayout from '@/components/PageLayout';
+import { useWatchRoomContextSafe } from '@/components/WatchRoomProvider';
 
 let Artplayer: any = null;
 let Hls: any = null;
 let flvjs: any = null;
 
 export default function WebLivePage() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const artRef = useRef<HTMLDivElement | null>(null);
   const artPlayerRef = useRef<any>(null);
   const [loading, setLoading] = useState(true);
@@ -28,6 +32,8 @@ export default function WebLivePage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [selectedPlatform, setSelectedPlatform] = useState<string | null>(null);
   const [isWebLiveEnabled, setIsWebLiveEnabled] = useState<boolean | null>(null);
+  const [librariesLoaded, setLibrariesLoaded] = useState(false);
+  const hasAutoLoadedRef = useRef(false); // 防止重复自动加载
 
   // 观影室同步功能
   const webLiveSync = useWebLiveSync({
@@ -52,9 +58,14 @@ export default function WebLivePage() {
     document.head.appendChild(meta);
 
     if (typeof window !== 'undefined') {
-      import('artplayer').then(mod => { Artplayer = mod.default; });
-      import('hls.js').then(mod => { Hls = mod.default; });
-      import('flv.js').then(mod => { flvjs = mod.default; });
+      // 异步加载所有必需的库
+      Promise.all([
+        import('artplayer').then(mod => { Artplayer = mod.default; }),
+        import('hls.js').then(mod => { Hls = mod.default; }),
+        import('flv.js').then(mod => { flvjs = mod.default; })
+      ]).then(() => {
+        setLibrariesLoaded(true);
+      });
 
       // 检查网络直播功能是否启用
       const runtimeConfig = (window as any).RUNTIME_CONFIG;
@@ -92,6 +103,41 @@ export default function WebLivePage() {
       setLoading(false);
     }
   };
+
+  // 当 sources 加载完成后，检查 URL 参数并自动加载对应的频道
+  useEffect(() => {
+    if (!sources || sources.length === 0) return;
+    if (!librariesLoaded) return; // 等待库加载完成
+
+    // 直接从 searchParams 读取，而不是从 useState
+    const needLoadPlatform = searchParams.get('platform');
+    const needLoadRoomId = searchParams.get('roomId');
+
+    if (!needLoadPlatform || !needLoadRoomId) {
+      hasAutoLoadedRef.current = false; // 重置标志
+      return;
+    }
+
+    // 检查是否已经加载了这个频道
+    if (currentSource?.platform === needLoadPlatform && currentSource?.roomId === needLoadRoomId) {
+      return;
+    }
+
+    // 防止重复加载
+    if (hasAutoLoadedRef.current) {
+      return;
+    }
+
+    hasAutoLoadedRef.current = true;
+
+    // 查找匹配的 source
+    const foundSource = sources.find(s => s.platform === needLoadPlatform && s.roomId === needLoadRoomId);
+    if (foundSource) {
+      handleSourceClick(foundSource);
+    } else {
+      hasAutoLoadedRef.current = false; // 重置标志以便重试
+    }
+  }, [sources, librariesLoaded, searchParams]);
 
   function m3u8Loader(video: HTMLVideoElement, url: string) {
     if (!Hls) return;
@@ -212,12 +258,31 @@ export default function WebLivePage() {
     setIsVideoLoading(true);
     setErrorMessage(null);
     setStreamInfo(null);
+
+    // 更新 URL 参数
+    const newSearchParams = new URLSearchParams(searchParams.toString());
+    newSearchParams.set('platform', source.platform);
+    newSearchParams.set('roomId', source.roomId);
+    router.replace(`/web-live?${newSearchParams.toString()}`);
+
     try {
       const res = await fetch(`/api/web-live/stream?platform=${source.platform}&roomId=${source.roomId}`);
       if (res.ok) {
         const data = await res.json();
-        setVideoUrl(data.url);
-        setOriginalVideoUrl(data.originalUrl || data.url);
+
+        // 等待 DOM 渲染完成后再设置 videoUrl
+        const waitForDom = () => {
+          if (artRef.current) {
+            setVideoUrl(data.url);
+            setOriginalVideoUrl(data.originalUrl || data.url);
+          } else {
+            requestAnimationFrame(waitForDom);
+          }
+        };
+
+        // 使用 requestAnimationFrame 等待下一帧
+        requestAnimationFrame(waitForDom);
+
         // 保存主播信息
         if (data.name || data.title) {
           setStreamInfo({
