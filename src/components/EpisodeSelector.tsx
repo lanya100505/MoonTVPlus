@@ -202,56 +202,37 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
       return;
     }
 
-    const readWatchedEpisodes = () => {
-      const watched = new Set<number>();
+    const watched = new Set<number>();
 
-      try {
-        const records = getCachedPlayRecordsSnapshot();
-        const record = records[generateStorageKey(currentSource, currentId)];
-        if (record && record.index > 0 && record.play_time > 1) {
-          watched.add(record.index);
-        }
-      } catch (error) {
-        console.warn('[EpisodeSelector] Failed to read cached play records:', error);
+    try {
+      const records = getCachedPlayRecordsSnapshot();
+      const record = records[generateStorageKey(currentSource, currentId)];
+      if (record && record.index > 0 && record.play_time > 1) {
+        watched.add(record.index);
       }
+    } catch (error) {
+      console.warn('[EpisodeSelector] Failed to read cached play records:', error);
+    }
 
-      try {
-        const episodeRecords = loadAllLocalEpisodeProgressRecords(
-          episodeProgressContentKey
-        );
+    try {
+      const episodeRecords = loadAllLocalEpisodeProgressRecords(
+        episodeProgressContentKey
+      );
 
-        for (const [episodeIndex, record] of Object.entries(episodeRecords)) {
-          if (Number(record?.playTime) > 1) {
-            const episodeNumber = Number(episodeIndex) + 1;
-            if (episodeNumber >= 1 && episodeNumber <= totalEpisodes) {
-              watched.add(episodeNumber);
-            }
+      for (const [episodeIndex, record] of Object.entries(episodeRecords)) {
+        if (Number(record?.playTime) > 1) {
+          const episodeNumber = Number(episodeIndex) + 1;
+          if (episodeNumber >= 1 && episodeNumber <= totalEpisodes) {
+            watched.add(episodeNumber);
           }
         }
-      } catch (error) {
-        console.warn('[EpisodeSelector] Failed to read local episode progress:', error);
       }
+    } catch (error) {
+      console.warn('[EpisodeSelector] Failed to read local episode progress:', error);
+    }
 
-      setWatchedEpisodes(watched);
-    };
-
-    readWatchedEpisodes();
-
-    const handlePlayRecordsUpdated = () => {
-      readWatchedEpisodes();
-    };
-
-    window.addEventListener('playRecordsUpdated', handlePlayRecordsUpdated as EventListener);
-    window.addEventListener('storage', handlePlayRecordsUpdated);
-
-    return () => {
-      window.removeEventListener(
-        'playRecordsUpdated',
-        handlePlayRecordsUpdated as EventListener
-      );
-      window.removeEventListener('storage', handlePlayRecordsUpdated);
-    };
-  }, [currentSource, currentId, episodeProgressContentKey, totalEpisodes]);
+    setWatchedEpisodes(watched);
+  }, [currentSource, currentId, episodeProgressContentKey, totalEpisodes, value]);
 
   // 主要的 tab 状态：'danmaku' | 'episodes' | 'sources'
   // 默认显示选集选项卡，但如果是房员则显示弹幕
