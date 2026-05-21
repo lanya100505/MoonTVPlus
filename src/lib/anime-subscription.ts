@@ -6,7 +6,15 @@ import { getConfig, setCachedConfig } from '@/lib/config';
 import { db, getStorage } from '@/lib/db';
 import { EmailService } from '@/lib/email.service';
 import { OpenListClient } from '@/lib/openlist.client';
-import { AnimeSubscription } from '@/types/anime-subscription';
+import { AnimeSubscription, AnimeSubscriptionDownloadTool } from '@/types/anime-subscription';
+
+const downloadTools: AnimeSubscriptionDownloadTool[] = ['aria2', 'qBittorrent', 'Transmission'];
+
+function getAnimeSubscriptionDownloadTool(tool: unknown): AnimeSubscriptionDownloadTool {
+  return typeof tool === 'string' && downloadTools.includes(tool as AnimeSubscriptionDownloadTool)
+    ? tool as AnimeSubscriptionDownloadTool
+    : 'aria2';
+}
 
 /**
  * 从标题中提取集数
@@ -121,6 +129,9 @@ export async function addOfflineDownload(
 ) {
   const config = await getConfig();
   const openlistConfig = config.OpenListConfig;
+  const downloadTool = getAnimeSubscriptionDownloadTool(
+    config.AnimeSubscriptionConfig?.DownloadTool
+  );
 
   if (!openlistConfig?.Enabled) {
     throw new Error('私人影库功能未启用');
@@ -152,7 +163,7 @@ export async function addOfflineDownload(
     body: JSON.stringify({
       path: downloadPath,
       urls: [torrentUrl],
-      tool: 'aria2',
+      tool: downloadTool,
     }),
   });
 

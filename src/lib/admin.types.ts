@@ -343,6 +343,7 @@ export interface AdminConfig {
   };
   AnimeSubscriptionConfig?: {
     Enabled: boolean; // 是否启用追番功能
+    DownloadTool?: 'aria2' | 'qBittorrent' | 'Transmission'; // 追番订阅全局下载方式
     Subscriptions: Array<{
       id: string;
       title: string;

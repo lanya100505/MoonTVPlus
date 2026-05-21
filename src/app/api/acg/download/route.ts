@@ -8,6 +8,13 @@ import { hasFeaturePermission } from '@/lib/permissions';
 
 export const runtime = 'nodejs';
 
+const downloadTools = ['aria2', 'Transmission', 'qBittorrent'] as const;
+type DownloadTool = typeof downloadTools[number];
+
+function isDownloadTool(tool: unknown): tool is DownloadTool {
+  return typeof tool === 'string' && downloadTools.includes(tool as DownloadTool);
+}
+
 /**
  * POST /api/acg/download
  * 添加 ACG 资源到 OpenList 离线下载（仅管理员和站长可用）
@@ -23,7 +30,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { url, name } = await req.json();
+    const { url, name, tool = 'aria2' } = await req.json();
 
     if (!url || typeof url !== 'string') {
       return NextResponse.json(
@@ -35,6 +42,13 @@ export async function POST(req: NextRequest) {
     if (!name || typeof name !== 'string') {
       return NextResponse.json(
         { error: '资源名称不能为空' },
+        { status: 400 }
+      );
+    }
+
+    if (!isDownloadTool(tool)) {
+      return NextResponse.json(
+        { error: '下载方式不支持' },
         { status: 400 }
       );
     }
@@ -81,7 +95,7 @@ export async function POST(req: NextRequest) {
       body: JSON.stringify({
         path: downloadPath,
         urls: [url],
-        tool: 'aria2',
+        tool,
       }),
     });
 
